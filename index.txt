@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bellows Factor from Subject Distance</title>
+  <style>
+    body {
+      background-color: #f5f5f0;
+      color: #2d5d2d;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .container label {
+      margin-top: 10px;
+      display: block;
+    }
+    .container input, 
+    .container select, 
+    .container button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+    .container button {
+      background-color: #2d5d2d;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .container button:hover {
+      background-color: #3a5c3a;
+    }
+    .results {
+      margin-top: 20px;
+      padding: 10px;
+      background: #e0e0d1;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bellows Factor from Subject Distance</h1>
+  
+  <!-- Step One: Calculate Bellows Extension and Factor -->
+  <div class="container" id="stepOneContainer">
+    <h2>Step One: Bellows Factor Calculation</h2>
+    <label for="focalLength">Focal Length (mm):</label>
+    <input type="number" id="focalLength" placeholder="Enter focal length" required>
+    
+    <label for="distanceUnit">Distance Unit:</label>
+    <select id="distanceUnit">
+      <option value="meters">Meters</option>
+      <option value="centimeters">Centimeters</option>
+      <option value="inches">Inches</option>
+      <option value="feet" selected>Feet</option>
+    </select>
+    
+    <label for="subjectDistance">Subject Distance:</label>
+    <input type="number" id="subjectDistance" placeholder="Enter subject distance" required>
+    
+    <label for="compMethod">Exposure Compensation Method:</label>
+    <select id="compMethod">
+      <option value="aperture">Aperture</option>
+      <option value="seconds">Seconds</option>
+      <option value="ss_aperture">Shutter Speed + Aperture</option>
+    </select>
+    
+    <button onclick="calculateStepOne()">Calculate</button>
+    
+    <div class="results" id="stepOneResults">
+      <p>Bellows Extension: <span id="bellowsExtension">--</span> mm</p>
+      <p>Bellows Factor: <span id="bellowsFactor">--</span> stops</p>
+    </div>
+  </div>
+  
+  <!-- Step Two: Aperture Compensation (for Aperture mode) -->
+  <div class="container" id="stepTwoContainer" style="display: none;">
+    <h2>Step Two: Aperture Compensation</h2>
+    <label for="selectedAperture">Select your Aperture:</label>
+    <select id="selectedAperture">
+      <!-- Half-stop increments from f/2.8 to f/64 -->
+      <option value="2.8">f/2.8</option>
+      <option value="3.2">f/3.2</option>
+      <option value="3.6">f/3.6</option>
+      <option value="4">f/4</option>
+      <option value="4.5">f/4.5</option>
+      <option value="5">f/5</option>
+      <option value="5.6">f/5.6</option>
+      <option value="6.3">f/6.3</option>
+      <option value="7.1">f/7.1</option>
+      <option value="8">f/8</option>
+      <option value="9">f/9</option>
+      <option value="10">f/10</option>
+      <option value="11">f/11</option>
+      <option value="13">f/13</option>
+      <option value="14">f/14</option>
+      <option value="16">f/16</option>
+      <option value="18">f/18</option>
+      <option value="20">f/20</option>
+      <option value="22">f/22</option>
+      <option value="25">f/25</option>
+      <option value="29">f/29</option>
+      <option value="32">f/32</option>
+      <option value="36">f/36</option>
+      <option value="40">f/40</option>
+      <option value="45">f/45</option>
+      <option value="51">f/51</option>
+      <option value="57">f/57</option>
+      <option value="64">f/64</option>
+    </select>
+    
+    <button onclick="calculateApertureCompensation()">Calculate Exposure</button>
+    
+    <div class="results" id="stepTwoResults">
+      <p>Compensated Aperture: <span id="compensatedAperture">--</span></p>
+    </div>
+  </div>
+  
+  <!-- Step Two: Seconds Compensation (for Seconds mode) -->
+  <div class="container" id="secondsContainer" style="display: none;">
+    <h2>Step Two: Seconds Compensation</h2>
+    <label for="timeInputSeconds">Enter Time (seconds):</label>
+    <input type="number" id="timeInputSeconds" placeholder="Enter seconds">
+    <button onclick="calculateSecondsCompensation()">Calculate Exposure</button>
+    <div class="results" id="secondsResults">
+      <p>Compensated Time: <span id="compensatedTime">--</span> sec</p>
+    </div>
+  </div>
+  
+  <!-- Step Two: Shutter Speed + Aperture Compensation (for ss_aperture mode) -->
+  <div class="container" id="ssApertureContainer" style="display: none;">
+    <h2>Step Two: Shutter Speed + Aperture Compensation</h2>
+    <label for="selectedShutterSpeed">Select your Starting Shutter Speed:</label>
+    <select id="selectedShutterSpeed">
+      <!-- Using string values for precise comparisons -->
+      <option value="0.002">1/500</option>
+      <option value="0.004">1/250</option>
+      <option value="0.008">1/125</option>
+      <option value="0.017">1/60</option>
+      <option value="0.033">1/30</option>
+      <option value="0.067">1/15</option>
+      <option value="0.125">1/8</option>
+      <option value="0.25">1/4</option>
+      <option value="0.5">1/2</option>
+    </select>
+    
+    <label for="selectedSSAperture">Select your Starting Aperture:</label>
+    <select id="selectedSSAperture">
+      <!-- Same half-stop increments as above -->
+      <option value="2.8">f/2.8</option>
+      <option value="3.2">f/3.2</option>
+      <option value="3.6">f/3.6</option>
+      <option value="4">f/4</option>
+      <option value="4.5">f/4.5</option>
+      <option value="5">f/5</option>
+      <option value="5.6">f/5.6</option>
+      <option value="6.3">f/6.3</option>
+      <option value="7.1">f/7.1</option>
+      <option value="8">f/8</option>
+      <option value="9">f/9</option>
+      <option value="10">f/10</option>
+      <option value="11">f/11</option>
+      <option value="13">f/13</option>
+      <option value="14">f/14</option>
+      <option value="16">f/16</option>
+      <option value="18">f/18</option>
+      <option value="20">f/20</option>
+      <option value="22">f/22</option>
+      <option value="25">f/25</option>
+      <option value="29">f/29</option>
+      <option value="32">f/32</option>
+      <option value="36">f/36</option>
+      <option value="40">f/40</option>
+      <option value="45">f/45</option>
+      <option value="51">f/51</option>
+      <option value="57">f/57</option>
+      <option value="64">f/64</option>
+    </select>
+    
+    <button onclick="calculateSSApertureCompensation()">Calculate Exposure</button>
+    
+    <div class="results" id="ssApertureResults">
+      <p>Adjusted Shutter Speed: <span id="adjustedShutterSpeed">--</span></p>
+      <p>Adjusted Aperture: <span id="adjustedSSAperture">--</span></p>
+    </div>
+  </div>
+  
+  <script>
+    // Global variable to store the bellows factor from Step One
+    let globalBellowsFactor = 0;
+    
+    function calculateStepOne() {
+      let focalLength = parseFloat(document.getElementById("focalLength").value);
+      let subjectDistance = parseFloat(document.getElementById("subjectDistance").value);
+      let distanceUnit = document.getElementById("distanceUnit").value;
+      let compMethod = document.getElementById("compMethod").value;
+      
+      // Conversion factors to mm
+      const conversionFactors = {
+        meters: 1000,
+        centimeters: 10,
+        inches: 25.4,
+        feet: 304.8
+      };
+      let subjectDistanceMM = subjectDistance * conversionFactors[distanceUnit];
+      
+      if (subjectDistanceMM <= focalLength) {
+        alert("Subject distance must be greater than the focal length.");
+        return;
+      }
+      
+      // Calculate bellows extension (in mm)
+      let bellowsExtension = (focalLength * subjectDistanceMM) / (subjectDistanceMM - focalLength);
+      
+      // Calculate bellows factor (in stops):
+      // bellowsFactor = 2 * log2(bellowsExtension / focalLength)
+      let bellowsFactor = 2 * (Math.log(bellowsExtension / focalLength) / Math.log(2));
+      globalBellowsFactor = bellowsFactor; // store for Step Two
+      
+      // Update Step One results
+      document.getElementById("bellowsExtension").innerText = bellowsExtension.toFixed(1);
+      document.getElementById("bellowsFactor").innerText = bellowsFactor.toFixed(2);
+      
+      // Show the appropriate Step Two panel based on the selected compensation method
+      if (compMethod === "aperture") {
+        document.getElementById("stepTwoContainer").style.display = "block";
+        document.getElementById("secondsContainer").style.display = "none";
+        document.getElementById("ssApertureContainer").style.display = "none";
+      } else if (compMethod === "seconds") {
+        document.getElementById("stepTwoContainer").style.display = "none";
+        document.getElementById("secondsContainer").style.display = "block";
+        document.getElementById("ssApertureContainer").style.display = "none";
+      } else if (compMethod === "ss_aperture") {
+        document.getElementById("stepTwoContainer").style.display = "none";
+        document.getElementById("secondsContainer").style.display = "none";
+        document.getElementById("ssApertureContainer").style.display = "block";
+      }
+    }
+    
+    function calculateApertureCompensation() {
+      // For Aperture mode: Adjust the selected aperture to brighten the exposure.
+      let selectedAperture = parseFloat(document.getElementById("selectedAperture").value);
+      // To brighten the exposure, divide the selected aperture by 2^(bellowsFactor/2)
+      let compensatedAperture = selectedAperture / Math.pow(2, globalBellowsFactor / 2);
+      document.getElementById("compensatedAperture").innerText = "f/" + compensatedAperture.toFixed(1);
+    }
+    
+    function calculateSecondsCompensation() {
+      // For Seconds mode: Multiply the entered time by 2^(bellowsFactor)
+      let timeInput = parseFloat(document.getElementById("timeInputSeconds").value);
+      if (isNaN(timeInput) || timeInput <= 0) {
+        alert("Please enter a valid time in seconds.");
+        return;
+      }
+      let compensatedTime = timeInput * Math.pow(2, globalBellowsFactor);
+      document.getElementById("compensatedTime").innerText = compensatedTime.toFixed(1);
+    }
+    
+    function calculateSSApertureCompensation() {
+      // For Shutter Speed + Aperture mode
+      
+      // Define shutter speeds as objects with label and value (using string values for reliable comparisons)
+      const shutterSpeeds = [
+        { label: "1/500", value: "0.002" },
+        { label: "1/250", value: "0.004" },
+        { label: "1/125", value: "0.008" },
+        { label: "1/60",  value: "0.017" },
+        { label: "1/30",  value: "0.033" },
+        { label: "1/15",  value: "0.067" },
+        { label: "1/8",   value: "0.125" },
+        { label: "1/4",   value: "0.25" },
+        { label: "1/2",   value: "0.5" }
+      ];
+      
+      // Get the starting shutter speed (as a string) from the dropdown
+      let selectedShutterSpeedStr = document.getElementById("selectedShutterSpeed").value;
+      let selectedShutterSpeed = parseFloat(selectedShutterSpeedStr);
+      
+      // Find its index in the shutterSpeeds array (using string comparison)
+      let startingIndex = shutterSpeeds.findIndex(item => item.value === selectedShutterSpeedStr);
+      
+      // Determine the number of shutter stops to add:
+      // If bellows factor is less than 1, add 1 stop; if between 1 and 1.99, add 2 stops; etc.
+      let shutterStopsToAdd = Math.floor(globalBellowsFactor) + 1;
+      
+      let newIndex = startingIndex + shutterStopsToAdd;
+      if (newIndex >= shutterSpeeds.length) {
+        newIndex = shutterSpeeds.length - 1; // Cap at the slowest available speed.
+      }
+      let adjustedShutterSpeed = shutterSpeeds[newIndex].label;
+      
+      // Calculate extra exposure (in stops) remaining after applying the shutter speed increase:
+      let extraExposure = shutterStopsToAdd - globalBellowsFactor;
+      
+      // Get the starting aperture for SS + Aperture mode
+      let selectedSSAperture = parseFloat(document.getElementById("selectedSSAperture").value);
+      // To compensate for the extra exposure, stop down the aperture:
+      // New aperture = starting aperture * 2^(extraExposure/2)
+      let adjustedAperture = selectedSSAperture * Math.pow(2, extraExposure / 2);
+      
+      // Update the results
+      document.getElementById("adjustedShutterSpeed").innerText = adjustedShutterSpeed;
+      document.getElementById("adjustedSSAperture").innerText = "f/" + adjustedAperture.toFixed(1);
+    }
+  </script>
+</body>
+</html>
